@@ -1,0 +1,9 @@
+OpenCSV 3.0
+2014-09-10
+
+http://opencsv.sourceforge.net/
+
+by Glen Smith, Kyle Miller, Scott Conway and Sean Sullivan
+
+JavaDoc: 
+http://opencsv.sourceforge.net/apidocs/index.html

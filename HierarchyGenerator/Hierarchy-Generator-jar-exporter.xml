@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project Servers">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required      -->
+                                      
+    <target name="create_run_jar">    	
+		<jar destfile="HierarchyGenerator.jar" >
+	        <zipgroupfileset dir="lib/opencsv-3.0" includes="*.jar"/>
+	        <zipgroupfileset dir="lib/commons-lang3-3.3.2" includes="*.jar"/>
+        	<manifest>
+                <attribute name="Main-Class" value="org.gfbio.terminologyServer.tools.HierarchyGenerator"/>
+            </manifest>
+			<fileset dir="bin" includes="org/gfbio/terminologyServer/tools/" />
+		</jar>
+    </target>
+</project>
