@@ -3,10 +3,12 @@ package org.gfbio.terminologyServer.tools;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeSet;
@@ -159,7 +161,7 @@ public class HierarchyGenerator {
 		
 		HierarchyNode rootNode = null;
 		try {
-			CSVReader csvReader = new CSVReader(new FileReader(inputFile),separatorCharacter,quoteCharacter);
+			CSVReader csvReader = new CSVReader(new InputStreamReader(new FileInputStream(inputFile), "UTF-8"),separatorCharacter,quoteCharacter);
 			LinkedList<String[]> lines = new LinkedList<String[]>();
 			int lineNumber = 0;
 			//read file line by line
@@ -227,7 +229,7 @@ public class HierarchyGenerator {
 		try {
 			String outputFilePath = getSetting(outputFileKey);
 			File outputFile = new File(outputFilePath);
-			BufferedWriter out = new BufferedWriter(new FileWriter(outputFile));
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), "UTF8"));
 			
 			//write the header from file
 			String headerFileLink = getSetting(headerFileKey);
@@ -235,7 +237,7 @@ public class HierarchyGenerator {
 				File headerFile = new File(headerFileLink);
 				if(headerFile.exists()){
 					if(headerFile.isFile()){
-						BufferedReader headerReader = new BufferedReader(new FileReader(headerFile));
+						BufferedReader headerReader = new BufferedReader(new InputStreamReader(new FileInputStream(headerFile), "UTF8"));
 						String headerLine = headerReader.readLine();
 						while(headerLine != null){
 							out.write(headerLine+"\n");
@@ -266,7 +268,7 @@ public class HierarchyGenerator {
 				File footerFile = new File(footerFileLink);
 				if(footerFile.exists()){
 					if(footerFile.isFile()){
-						BufferedReader footerReader = new BufferedReader(new FileReader(footerFile));
+						BufferedReader footerReader = new BufferedReader(new InputStreamReader(new FileInputStream(footerFile), "UTF8"));
 						String footerLine = footerReader.readLine();
 						while(footerLine != null){
 							out.write(footerLine+"\n");
