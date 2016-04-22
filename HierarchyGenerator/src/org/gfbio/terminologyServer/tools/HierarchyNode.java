@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HierarchyNode {
 	protected String name;
@@ -156,50 +158,99 @@ public class HierarchyNode {
 				//print properties of node
 				String properties = "";
 				if(childNode.lines.size()>0){
-					if(childNode.lines.size()>1){
-						//warning: only using first line for element properties
-						String lineNumbers = childNode.lines.getLast()[0];
-						for(int lineIndex = childNode.lines.size()-2; lineIndex > 0;lineIndex--){
-							lineNumbers = lineNumbers + ", " + childNode.lines.get(lineIndex)[0];
-						}
-						lineNumbers = lineNumbers + " and " + childNode.lines.get(0)[0];
-						System.out.println("There are multiple lines for the object properties of element "+childNode.id+" ('"+childNode.name+"'); line numbers: "+lineNumbers+"\n\tOnly the properties of line "+childNode.lines.getLast()[0]+" will be used.");
-					}
-					//use last line, since the lines are in reversed order
-					String[] line = childNode.lines.getLast();
-					for(int propertyColumnIndex:hierarchyGenerator.propertyColumns){
-												
-						if(line.length > propertyColumnIndex){
-							//try to load property template specific for this property
-							String propertyTemplate = hierarchyGenerator.getSetting(HierarchyGenerator.columnPrefix+propertyColumnIndex+HierarchyGenerator.propertyTemplateKey);
-							if(propertyTemplate.length() == 0){
-								//alternative 1: try to load property template specific for this element
-								propertyTemplate = hierarchyGenerator.getSetting(HierarchyGenerator.columnPrefix+childNode.columnIndex+HierarchyGenerator.propertyTemplateKey);
-								//alternative 2: try to load default property template
+//					if(childNode.lines.size()>1){
+//						//warning: only using first line for element properties
+//						String lineNumbers = childNode.lines.getLast()[0];
+//						for(int lineIndex = childNode.lines.size()-2; lineIndex > 0;lineIndex--){
+//							lineNumbers = lineNumbers + ", " + childNode.lines.get(lineIndex)[0];
+//						}
+//						lineNumbers = lineNumbers + " and " + childNode.lines.get(0)[0];
+//						System.out.println("There are multiple lines for the object properties of element "+childNode.id+" ('"+childNode.name+"'); line numbers: "+lineNumbers+"\n\tOnly the properties of line "+childNode.lines.getLast()[0]+" will be used.");
+//					}
+					for(int lineIndex = childNode.lines.size()-1; lineIndex >= 0; lineIndex--){
+						//start with the last line, since the lines are in reversed order
+						String[] line = childNode.lines.get(lineIndex);
+						for(int propertyColumnIndex:hierarchyGenerator.propertyColumns){
+													
+							if(line.length > propertyColumnIndex){
+								//try to load property template specific for this property
+								String propertyTemplate = hierarchyGenerator.getSetting(HierarchyGenerator.columnPrefix+propertyColumnIndex+HierarchyGenerator.propertyTemplateKey);
 								if(propertyTemplate.length() == 0){
-									propertyTemplate = hierarchyGenerator.getSetting(HierarchyGenerator.defaultPrefix+HierarchyGenerator.propertyTemplateKey);
-									if(propertyTemplate.length()==0){
-										System.out.println("Warning: There is no "+HierarchyGenerator.propertyTemplateKey+" for column "+propertyColumnIndex+". This property will not be displayed for node "+childNode.id+" ('"+childNode.name+"').");
+									//alternative 1: try to load property template specific for this element
+									propertyTemplate = hierarchyGenerator.getSetting(HierarchyGenerator.columnPrefix+childNode.columnIndex+HierarchyGenerator.propertyTemplateKey);
+									//alternative 2: try to load default property template
+									if(propertyTemplate.length() == 0){
+										propertyTemplate = hierarchyGenerator.getSetting(HierarchyGenerator.defaultPrefix+HierarchyGenerator.propertyTemplateKey);
+										if(propertyTemplate.length()==0){
+											System.out.println("Warning: There is no "+HierarchyGenerator.propertyTemplateKey+" for column "+propertyColumnIndex+". This property will not be displayed for node "+childNode.id+" ('"+childNode.name+"').");
+										}
 									}
 								}
-							}
-							String propertyValue = line[propertyColumnIndex];
-							if(!propertyValue.equals("")){
-								String propertyOutput = propertyTemplate;
-								//if columnNames exist, replace <property> place holder with column name
-								if(hierarchyGenerator.columnNames != null && hierarchyGenerator.columnNames.length > propertyColumnIndex){
-									String propertyKey = hierarchyGenerator.columnNames[propertyColumnIndex];
-									propertyOutput = propertyOutput.replace("<property>", propertyKey);
+								String propertyValue = line[propertyColumnIndex];
+								if(!propertyValue.equals("") && !propertyTemplate.equals(" ") && !propertyTemplate.equals("	")){
+									String propertyOutput = propertyTemplate;
+									//if columnNames exist, replace <property> place holder with column name
+									if(hierarchyGenerator.columnNames != null && hierarchyGenerator.columnNames.length > propertyColumnIndex){
+										String propertyKey = hierarchyGenerator.columnNames[propertyColumnIndex];
+										propertyOutput = propertyOutput.replace("<property>", propertyKey);
+									}
+									Pattern patternIfClause = Pattern.compile("<if-property-(\\d)+>.*?<\\/if-property-(\\1)+>");
+									Matcher matcherIfClause = patternIfClause.matcher(propertyOutput);
+									// check all occurances
+									while (matcherIfClause.find()) {
+										int foreignPropertyColumnIndex = Integer.parseInt(matcherIfClause.group(1)); 
+										boolean foreignPropertyColumnIsValid = false;
+										for(int foreignPropertyColumnComparisonIndex:hierarchyGenerator.propertyColumns){
+											if(foreignPropertyColumnIndex == foreignPropertyColumnComparisonIndex){
+												//the column to be replaced is a valid property column
+												String foreignPropertyValue = line[foreignPropertyColumnIndex];
+												if(foreignPropertyValue.length() > 0){
+													//the content doesn't matter at this point as long as there is some, it will be replaced later, just as the ones without the if clauses around them
+													//here just the opening and closing if-tages are removed
+													propertyOutput = propertyOutput.replace("<if-property-"+matcherIfClause.group(1)+">", "");
+													propertyOutput = propertyOutput.replace("</if-property-"+matcherIfClause.group(1)+">", "");
+													foreignPropertyColumnIsValid = true;
+												}
+												break;
+											}
+										}
+										if(!foreignPropertyColumnIsValid){
+											//there is no column with the requested index, so the entire if-section with all its content is removed
+											propertyOutput = propertyOutput.replace(matcherIfClause.group(), "");
+										}
+									}
+									
+									
+									Pattern patternSimpleProperty = Pattern.compile("<property-(\\d)+>");
+									Matcher matcherSimpleProperty = patternSimpleProperty.matcher(propertyOutput);
+									// check all occurances
+									while (matcherSimpleProperty.find()) {
+										int foreignPropertyColumnIndex = Integer.parseInt(matcherSimpleProperty.group(1));
+										boolean foreignPropertyColumnIsValid = false;
+										for(int foreignPropertyColumnComparisonIndex:hierarchyGenerator.propertyColumns){
+											
+											if(foreignPropertyColumnIndex == foreignPropertyColumnComparisonIndex){
+												//the column to be replaced is a valid property column
+												String foreignPropertyValue = line[foreignPropertyColumnIndex];
+												propertyOutput = propertyOutput.replace(matcherSimpleProperty.group(), foreignPropertyValue);
+												break;
+											}
+										}
+										if(!foreignPropertyColumnIsValid){
+											//there is no column with the requested index, so the property tag is removed
+											propertyOutput = propertyOutput.replace(matcherSimpleProperty.group(), "");
+										}
+									}
+									properties = properties + propertyOutput.replace("<value>", propertyValue)+"\n";
 								}
-								properties = properties + propertyOutput.replace("<value>", propertyValue)+"\n";
+							}else{
+								//warning: can not read column
+								String columnName = "";
+								if(hierarchyGenerator.columnNames != null && hierarchyGenerator.columnNames.length > propertyColumnIndex){
+									columnName = "('"+hierarchyGenerator.columnNames[propertyColumnIndex]+"') ";
+								}
+								System.out.println("can not find column "+propertyColumnIndex+" "+columnName+"in line "+line[0]+".");
 							}
-						}else{
-							//warning: can not read column
-							String columnName = "";
-							if(hierarchyGenerator.columnNames != null && hierarchyGenerator.columnNames.length > propertyColumnIndex){
-								columnName = "('"+hierarchyGenerator.columnNames[propertyColumnIndex]+"') ";
-							}
-							System.out.println("can not find column "+propertyColumnIndex+" "+columnName+"in line "+line[0]+".");
 						}
 					}
 				}
