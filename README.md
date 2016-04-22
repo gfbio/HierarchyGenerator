@@ -35,15 +35,15 @@ If some of the hierarchically higher-ranking column entries of a line in the inp
 
 **Example:** If the parameter *filldown* is set as true and the order of the hierarchy columns is 1,2,3, the lines
 
-<code>Australasia,Australia,Tasmania,,TAS
+<code>Australasia,Australia,Tasmania,,TAS</code>
 
-,,Western Australia,,WAU</code>
+<code>,,Western Australia,,WAU</code>
 
 are read as
 
-<code> Australasia,Australia,Tasmania,,TAS
+<code>Australasia,Australia,Tasmania,,TAS</code>
 
-Australasia,Australia,Western Australia,,WAU</code>.
+<code>Australasia,Australia,Western Australia,,WAU</code>.
 
 ### Cross hierarchy linking
 
